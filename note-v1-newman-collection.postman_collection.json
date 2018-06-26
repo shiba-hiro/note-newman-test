@@ -1,0 +1,429 @@
+{
+	"info": {
+		"name": "note-v1-newman-collection",
+		"_postman_id": "bff8a70f-24d9-4479-bdd7-8a02e9c637eb",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "notes-v1-get-list",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "10a9abcd-8ce3-4bbf-bcc8-4453874e5e88",
+						"type": "text/javascript",
+						"exec": [
+							"var RequestBody = require('postman-collection').RequestBody;",
+							"",
+							"var protocol = pm.environment.get('protocol');",
+							"var host = pm.environment.get('host');",
+							"var port = pm.environment.get('port');",
+							"",
+							"var requestBody = new RequestBody({",
+							"  mode: 'raw',",
+							"  raw: JSON.stringify({",
+							"    title: 'My First Note',",
+							"    content: 'I started to take note.'",
+							"  })",
+							"});",
+							"",
+							"var postRequestSetting = {",
+							"  url: protocol + '://' + host + ':' + port + '/v1/notes',",
+							"  method: 'POST',",
+							"  body: requestBody",
+							"};",
+							"",
+							"// to avoid warning of \"Don't make functions within a loop\", do recursive call",
+							"var i =  0;",
+							"function postTestData() {",
+							"  pm.sendRequest(postRequestSetting, function(err, res){",
+							"    var expectedNoteIds = pm.environment.get('expectedNoteIds');",
+							"    expectedNoteIds.push(res.json().id);",
+							"    pm.environment.set('expectedNoteIds', expectedNoteIds);",
+							"",
+							"    i++;",
+							"",
+							"    if (i<10) {",
+							"      postTestData();",
+							"    }",
+							"  });",
+							"}",
+							"",
+							"pm.environment.set('expectedNoteIds', []);",
+							"postTestData();"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "607472bc-4f17-422c-b1fe-1f05b0a78be6",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code is 200', function() {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Response contains expected resources', function() {",
+							"  var returnedNotes = pm.response.json();",
+							"  var returnedNoteIds = [];",
+							"  for(var i=0; i<returnedNotes.length; i++) {",
+							"    returnedNoteIds.push(returnedNotes[i].id)",
+							"  }",
+							"  ",
+							"  var expectedNoteIds = pm.environment.get('expectedNoteIds');",
+							"  // to avoid warning of \"i is already used\", use j",
+							"  for(var j=0; j<expectedNoteIds.length; j++) {",
+							"    // Because some data might have existed before executing test, check that response contains expectedIds",
+							"    pm.expect(returnedNoteIds).to.include(expectedNoteIds[j]);",
+							"  }",
+							"});",
+							"",
+							"pm.test('Items have expected fields.', function() {",
+							"  var returnedNotes = pm.response.json();",
+							"  for(var i=0; i<returnedNotes.length; i++) {",
+							"    note = returnedNotes[i];",
+							"    pm.expect(note).to.have.property('id');",
+							"    pm.expect(note).to.have.property('title');",
+							"    pm.expect(note).to.have.property('content');",
+							"    pm.expect(note).to.have.property('updated_at');",
+							"    pm.expect(note).to.have.property('created_at');",
+							"  }",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "{{protocol}}://{{host}}:{{port}}/v1/notes/",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"v1",
+						"notes",
+						""
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "notes-v1-post",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "cc6dbcf2-b34d-4a7e-9e9d-ed64f18dc250",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code is 201', function() {",
+							"  pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('Item has expected fields.', function() {",
+							"  var note = pm.response.json();",
+							"  pm.expect(note).to.have.property('id');",
+							"  pm.expect(note).to.have.property('title');",
+							"  pm.expect(note).to.have.property('content');",
+							"  pm.expect(note).to.have.property('updated_at');",
+							"  pm.expect(note).to.have.property('created_at');",
+							"});",
+							"",
+							"pm.test('Save-operation is reflected.', function() {",
+							"  var note = pm.response.json();",
+							"  pm.expect(note.title).to.eql('My First Note');",
+							"  pm.expect(note.content).to.eql('I started to take note.');",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"My First Note\",\n  \"content\": \"I started to take note.\"\n}"
+				},
+				"url": {
+					"raw": "{{protocol}}://{{host}}:{{port}}/v1/notes/",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"v1",
+						"notes",
+						""
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "notes-v1-get",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "2953cfe3-cdb7-4ccf-9253-31754eea4b5c",
+						"type": "text/javascript",
+						"exec": [
+							"var RequestBody = require('postman-collection').RequestBody;",
+							"",
+							"var protocol = pm.environment.get(\"protocol\");",
+							"var host = pm.environment.get(\"host\");",
+							"var port = pm.environment.get(\"port\");",
+							"",
+							"var requestBody = new RequestBody({",
+							"  mode: 'raw',",
+							"  raw: JSON.stringify({",
+							"    title: 'My First Note',",
+							"    content: 'I started to take note.'",
+							"  })",
+							"});",
+							"",
+							"var postRequestSetting = {",
+							"  url: protocol + '://' + host + ':' + port + '/v1/notes',",
+							"  method: 'POST',",
+							"  body: requestBody",
+							"};",
+							"",
+							"pm.sendRequest(postRequestSetting, function(err, res){",
+							"  pm.environment.set('noteIdForGetSingleTest', res.json().id);",
+							"});",
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "1db39db4-e0bc-4c8e-961c-e630d7332a0e",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code is 200', function() {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Response is expected resource', function() {",
+							"  var returnedNoteId = pm.response.json().id;",
+							"  var noteIdForGetSingleTest = pm.environment.get('noteIdForGetSingleTest');",
+							"  pm.expect(returnedNoteId).to.eql(noteIdForGetSingleTest);",
+							"});",
+							"",
+							"pm.test('Item has expected fields.', function() {",
+							"  var note = pm.response.json();",
+							"  pm.expect(note).to.have.property('id');",
+							"  pm.expect(note).to.have.property('title');",
+							"  pm.expect(note).to.have.property('content');",
+							"  pm.expect(note).to.have.property('updated_at');",
+							"  pm.expect(note).to.have.property('created_at');",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "{{protocol}}://{{host}}:{{port}}/v1/notes/{{noteIdForGetSingleTest}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"v1",
+						"notes",
+						"{{noteIdForGetSingleTest}}"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "notes-v1-put",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "771ee1eb-3690-4d1e-9be7-df4960027aca",
+						"type": "text/javascript",
+						"exec": [
+							"var RequestBody = require('postman-collection').RequestBody;",
+							"",
+							"var protocol = pm.environment.get(\"protocol\");",
+							"var host = pm.environment.get(\"host\");",
+							"var port = pm.environment.get(\"port\");",
+							"",
+							"var requestBody = new RequestBody({",
+							"  mode: 'raw',",
+							"  raw: JSON.stringify({",
+							"    title: 'My First Note',",
+							"    content: 'I started to take note.'",
+							"  })",
+							"});",
+							"",
+							"var postRequestSetting = {",
+							"  url: protocol + '://' + host + ':' + port + '/v1/notes',",
+							"  method: 'POST',",
+							"  body: requestBody",
+							"};",
+							"",
+							"pm.sendRequest(postRequestSetting, function(err, res){",
+							"  pm.environment.set('noteIdForPutTest', res.json().id);",
+							"});",
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "de958456-6191-42cc-847b-2e00fabe2884",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code is 200', function() {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Response is expected resource', function() {",
+							"  var returnedNoteId = pm.response.json().id;",
+							"  var noteIdForPutTest = pm.environment.get('noteIdForPutTest');",
+							"  pm.expect(returnedNoteId).to.eql(noteIdForPutTest);",
+							"});",
+							"",
+							"pm.test('Item has expected fields.', function() {",
+							"  var note = pm.response.json();",
+							"  pm.expect(note).to.have.property('id');",
+							"  pm.expect(note).to.have.property('title');",
+							"  pm.expect(note).to.have.property('content');",
+							"  pm.expect(note).to.have.property('updated_at');",
+							"  pm.expect(note).to.have.property('created_at');",
+							"});",
+							"",
+							"pm.test('Save-operation is reflected.', function() {",
+							"  var note = pm.response.json();",
+							"  pm.expect(note.title).to.eql('My First Note');",
+							"  pm.expect(note.content).to.eql('I started to take note. But it\\'s difficult to continue everyday...');",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"My First Note\",\n  \"content\": \"I started to take note. But it's difficult to continue everyday...\"\n}"
+				},
+				"url": {
+					"raw": "{{protocol}}://{{host}}:{{port}}/v1/notes/{{noteIdForPutTest}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"v1",
+						"notes",
+						"{{noteIdForPutTest}}"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "notes-v1-delete",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "ff4eb715-9c27-4093-a3f1-49efb5adaae3",
+						"type": "text/javascript",
+						"exec": [
+							"var RequestBody = require('postman-collection').RequestBody;",
+							"",
+							"var protocol = pm.environment.get(\"protocol\");",
+							"var host = pm.environment.get(\"host\");",
+							"var port = pm.environment.get(\"port\");",
+							"",
+							"var requestBody = new RequestBody({",
+							"  mode: 'raw',",
+							"  raw: JSON.stringify({",
+							"    title: 'My First Note',",
+							"    content: 'I started to take note.'",
+							"  })",
+							"});",
+							"",
+							"var postRequestSetting = {",
+							"  url: protocol + '://' + host + ':' + port + '/v1/notes',",
+							"  method: 'POST',",
+							"  body: requestBody",
+							"};",
+							"",
+							"pm.sendRequest(postRequestSetting, function(err, res){",
+							"  pm.environment.set('noteIdForDeleteTest', res.json().id);",
+							"});",
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "48833930-5731-4bcc-b4ec-0e115c67c5ac",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code is 204', function () {",
+							"    pm.response.to.have.status(204);",
+							"});",
+							"",
+							"pm.test('Response body is empty', function () {",
+							"    pm.response.to.not.have.body();",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "{{protocol}}://{{host}}:{{port}}/v1/notes/{{noteIdForDeleteTest}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"v1",
+						"notes",
+						"{{noteIdForDeleteTest}}"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
